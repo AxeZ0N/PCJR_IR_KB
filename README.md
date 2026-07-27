@@ -17,7 +17,7 @@ Transmits precise 40 kHz biphase‑Manchester encoded scan codes, verified aga
 See [`hardware/`](hardware/) for schematic, BOM, and pin mapping.
 
 ## Firmware
-The AVR C code is in [`firmware/`](firmware/). Key parameters:
+The AVR C code is in [`pcjr_type/`](pcjr_type/). Key parameters:
 
 | Parameter | Value |
 |-----------|-------|
@@ -38,16 +38,15 @@ The protocol was recovered through a forensic, lemma‑based approach.
 Read the dev log at [`docs/DEVLOG.md`](docs/DEVLOG.md) for the full story.
 
 ## Quick Start
-1. Flash `firmware/pcjr_tx.ino` to your Elegoo Mega2560.
+1. Flash `pcjr_type/pcjr_tx.ino` to your Elegoo Mega2560.
 2. Connect the IR LED driver circuit as shown in `hardware/schematic.png`.
 3. Power on the PCjr. Open a serial terminal at 600 baud.
 4. Type characters – they appear on the PCjr!
 
 ## Repository Structure
-- `firmware/` – AVR C transmitter code  
+- `pcjr_type/` – AVR C transmitter code  
 - `hardware/` – schematics, BOM, pin map  
 - `docs/` – protocol spec, dev log, lessons learned, scope captures  
-- `tools/` – Python test scripts (pigpio sweeps)  
 
 ## License
 MIT – see `LICENSE`.
