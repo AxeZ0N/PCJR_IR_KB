@@ -8,8 +8,8 @@ nnoremap <silent>  :nohlsearch
 omap <silent> % <Plug>(MatchitOperationForward)
 xmap <silent> % <Plug>(MatchitVisualForward)
 nmap <silent> % <Plug>(MatchitNormalForward)
-xmap Q gq
 nmap Q gq
+xmap Q gq
 omap Q gq
 vmap Y "+y
 nnoremap ZZ :wa:mks! :qa
@@ -241,121 +241,57 @@ setlocal nowinfixheight
 setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
-29
-normal! zo
-29
-normal! zo
 36
 normal! zo
 36
 normal! zo
-38
+43
 normal! zo
-38
+43
 normal! zo
-41
+56
 normal! zo
-41
+56
 normal! zo
-49
+71
 normal! zo
-49
-normal! zo
-52
-normal! zo
-52
-normal! zo
-63
-normal! zo
-63
-normal! zo
-69
-normal! zo
-69
-normal! zo
-77
-normal! zo
-77
-normal! zo
-84
-normal! zo
-84
+71
 normal! zo
 92
 normal! zo
 92
 normal! zo
-98
+100
 normal! zo
-98
-normal! zo
-101
-normal! zo
-101
-normal! zo
-102
-normal! zo
-105
-normal! zo
-105
-normal! zo
-110
-normal! zo
-110
+100
 normal! zo
 113
 normal! zo
 113
 normal! zo
-114
+118
 normal! zo
-117
+118
 normal! zo
-117
+125
 normal! zo
-121
+125
 normal! zo
-121
+139
 normal! zo
-131
+139
 normal! zo
-131
+177
 normal! zo
-150
+177
 normal! zo
-150
+189
 normal! zo
-153
+189
 normal! zo
-153
+190
 normal! zo
-172
-normal! zo
-172
-normal! zo
-182
-normal! zo
-182
-normal! zo
-183
-normal! zo
-183
-normal! zo
-185
-normal! zo
-185
-normal! zo
-188
-normal! zo
-188
-normal! zo
-194
-normal! zo
-194
-normal! zo
-195
-normal! zo
-195
+190
 normal! zo
 203
 normal! zo
@@ -364,20 +300,6 @@ normal! zo
 204
 normal! zo
 204
-normal! zo
-211
-normal! zo
-211
-normal! zo
-217
-normal! zo
-238
-normal! zo
-238
-normal! zo
-243
-normal! zo
-243
 normal! zo
 let s:l = 22 - ((21 * winheight(0) + 20) / 40)
 if s:l < 1 | let s:l = 1 | endif

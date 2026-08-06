@@ -113,13 +113,6 @@ compile_and_upload() {
     upload
 }
 
-sniff() {
-    check_deps socat
-    echo "Sniffing $SERIAL_DEVICE → $SNIFF_FAKE_DEVICE  (Ctrl+C to stop)"
-    socat -v -x -u "PTY,link=${SNIFF_FAKE_DEVICE},raw,echo=0" \
-        "file:${SERIAL_DEVICE},b${SERIAL_BAUD},raw,echo=0"
-}
-
 stream() {
     check_deps mpv
     local rtsp_url="rtsp://${STREAM_IP}:${STREAM_PORT}${STREAM_PATH}"
@@ -205,15 +198,6 @@ server-start() {
         echo "Starting MediaMTX directly (Ctrl+C to stop)..."
         "$MEDIAMTX_INSTALL_DIR/mediamtx" "$MEDIAMTX_CONFIG_DEST"
     fi
-}
-
-echo_text() {
-    if [ $# -eq 0 ]; then
-        echo "Usage: ./pcjr.sh echo <text>"
-        exit 1
-    fi
-    stty -F "$SERIAL_DEVICE" "$SERIAL_BAUD" raw -clocal -hupcl -echo
-    echo "$*" > "$SERIAL_DEVICE"
 }
 
 driver() {
