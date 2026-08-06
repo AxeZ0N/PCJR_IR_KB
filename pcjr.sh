@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # pcjr.sh – Unified PCjr toolkit control
-# Usage: ./pcjr.sh {setup|configure|compile|upload|cu|sniff|stream|server-setup|server-start|echo|driver|help}
+# Usage: ./pcjr.sh {setup|configure|compile|upload|cu|stream|server-setup|server-start|driver|help}
 set -euo pipefail
 
 # Determine the real user (before any sudo)
@@ -20,11 +20,10 @@ cd "$SCRIPT_DIR"
 SERIAL_DEVICE="/dev/ttyACM0"
 SERIAL_BAUD=600
 FQBN="arduino:avr:mega"
-BUILD_DIR="./pcjr_type/build"
+BUILD_DIR="./pcjr_ir_bridge/build"
 STREAM_IP="192.168.4.34"
 STREAM_PORT="8554"
 STREAM_PATH="/cam"
-SNIFF_FAKE_DEVICE="/tmp/virtual_arduino"
 PYTHON_DRIVER="./pcjrduino_tty.py"
 MEDIAMTX_CONFIG="./mediamtx.yml"
 MEDIAMTX_INSTALL_DIR="/usr/local/bin"
@@ -99,26 +98,19 @@ configure() {
 compile() {
     check_deps arduino-cli
     echo "Compiling..."
-    arduino-cli compile --fqbn "$FQBN" pcjr_type/ --build-path "$BUILD_DIR"
+    arduino-cli compile --fqbn "$FQBN" pcjr_ir_bridge/ --build-path "$BUILD_DIR"
 }
 
 upload() {
     check_deps avrdude
     echo "Uploading..."
     avrdude -v -p atmega2560 -c wiring -P "$SERIAL_DEVICE" -b 115200 -D \
-        -U "flash:w:${BUILD_DIR}/pcjr_type.ino.hex"
+        -U "flash:w:${BUILD_DIR}/pcjr_ir_bridge.ino.hex"
 }
 
 compile_and_upload() {
     compile
     upload
-}
-
-sniff() {
-    check_deps socat
-    echo "Sniffing $SERIAL_DEVICE → $SNIFF_FAKE_DEVICE  (Ctrl+C to stop)"
-    socat -v -x -u "PTY,link=${SNIFF_FAKE_DEVICE},raw,echo=0" \
-        "file:${SERIAL_DEVICE},b${SERIAL_BAUD},raw,echo=0"
 }
 
 stream() {
@@ -199,15 +191,6 @@ server-start() {
     fi
 }
 
-echo_text() {
-    if [ $# -eq 0 ]; then
-        echo "Usage: ./pcjr.sh echo <text>"
-        exit 1
-    fi
-    stty -F "$SERIAL_DEVICE" "$SERIAL_BAUD" raw -clocal -hupcl -echo
-    echo "$*" > "$SERIAL_DEVICE"
-}
-
 driver() {
     if [ ! -f "$PYTHON_DRIVER" ]; then
         echo "Python driver not found: $PYTHON_DRIVER"
@@ -228,11 +211,9 @@ Commands:
   compile             Compile the Arduino sketch
   upload              Upload compiled sketch to the board
   cu                  Compile + upload
-  sniff               Start serial sniffing (blocking)
   stream              Open mpv to view the RTSP camera stream
   server-setup        Install MediaMTX and configure the camera server
   server-start        Start the MediaMTX server (systemd or foreground)
-  echo <text>         Send text to the PCjr keyboard
   driver [args...]    Run the Python interactive keyboard driver
   help                Show this message
 
@@ -254,11 +235,9 @@ case "$1" in
     compile)        compile ;;
     upload)         upload ;;
     cu)             compile_and_upload ;;
-    sniff)          sniff ;;
     stream)         stream ;;
     server-setup)   server-setup ;;
     server-start)   server-start ;;
-    echo)           shift; echo_text "$@" ;;
     driver)         shift; driver "$@" ;;
     help|--help|-h) help_msg ;;
     *)              echo "Unknown command: $1" >&2; help_msg; exit 1 ;;
