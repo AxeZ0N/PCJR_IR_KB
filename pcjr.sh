@@ -3,6 +3,13 @@
 # Usage: ./pcjr.sh {setup|configure|compile|upload|cu|sniff|stream|server-setup|server-start|echo|driver|help}
 set -euo pipefail
 
+# Determine the real user (before any sudo)
+if [ -n "${SUDO_USER:-}" ]; then
+    REAL_USER="$SUDO_USER"
+else
+    REAL_USER="$USER"
+fi
+
 # Work from the script's directory so relative paths are safe
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
@@ -19,10 +26,10 @@ STREAM_PORT="8554"
 STREAM_PATH="/cam"
 SNIFF_FAKE_DEVICE="/tmp/virtual_arduino"
 PYTHON_DRIVER="./pcjrduino_tty.py"
-# MediaMTX settings
-MEDIAMTX_CONFIG="./mediamtx.yml"          # source config in repo
-MEDIAMTX_INSTALL_DIR="/usr/local/bin"     # where to put the binary
-MEDIAMTX_SERVICE_NAME="mediamtx"          # systemd service name
+MEDIAMTX_CONFIG="./mediamtx.yml"
+MEDIAMTX_INSTALL_DIR="/usr/local/bin"
+MEDIAMTX_CONFIG_DEST="/etc/mediamtx.yml"
+MEDIAMTX_SERVICE_NAME="mediamtx"
 
 CONFIG_FILE="./pcjr.conf"
 if [ -f "$CONFIG_FILE" ]; then
@@ -44,15 +51,16 @@ check_deps() {
     fi
 }
 
-# Detect architecture (used for MediaMTX binary download)
+# Detect architecture for MediaMTX download
 get_arch() {
     local arch
     arch=$(uname -m)
     case "$arch" in
-        x86_64)  echo "amd64" ;;
-        aarch64) echo "arm64" ;;
-        armv7l)  echo "armv7" ;;
-        *)       echo "unsupported ($arch)" >&2; exit 1 ;;
+        x86_64)   echo "amd64" ;;
+        aarch64)  echo "arm64v8" ;;
+        armv6l)   echo "armv6" ;;
+        armv7l)   echo "armv7" ;;
+        *)        echo "unsupported ($arch)" >&2; exit 1 ;;
     esac
 }
 
@@ -64,7 +72,7 @@ setup() {
     sudo apt update -y && sudo apt upgrade -y
     sudo apt install -y git avrdude socat python3-pip curl
 
-    # arduino-cli
+    # arduino-cli (official script handles ARMv6)
     if ! command -v arduino-cli &>/dev/null; then
         echo "Installing arduino-cli..."
         curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
@@ -125,68 +133,69 @@ stream() {
 }
 
 # ----------------------------------------------------------------------
-# MediaMTX server setup and control (for the Raspberry Pi / camera host)
+# MediaMTX server setup and control
 # ----------------------------------------------------------------------
 server-setup() {
     check_deps curl
     local arch
     arch=$(get_arch)
-    local version="v1.10.0"          # update to latest stable if needed
+    # Update this to the latest release if needed
+    local version="v1.10.0"
     local binary_url="https://github.com/bluenviron/mediamtx/releases/download/${version}/mediamtx_${version}_linux_${arch}.tar.gz"
     local tmpdir=$(mktemp -d)
 
     echo "=== Installing MediaMTX (stream server) ==="
 
-    # Download and extract
     echo "Downloading MediaMTX $version for $arch..."
     curl -L "$binary_url" | tar xz -C "$tmpdir"
 
-    # Install binary
     sudo mv "$tmpdir/mediamtx" "$MEDIAMTX_INSTALL_DIR/mediamtx"
     sudo chmod +x "$MEDIAMTX_INSTALL_DIR/mediamtx"
 
-    # Install config file
     if [ -f "$MEDIAMTX_CONFIG" ]; then
-        sudo cp "$MEDIAMTX_CONFIG" /etc/mediamtx.yml
-        echo "Config file installed to /etc/mediamtx.yml"
+        sudo cp "$MEDIAMTX_CONFIG" "$MEDIAMTX_CONFIG_DEST"
+        echo "Config file installed to $MEDIAMTX_CONFIG_DEST"
     else
         echo "Warning: $MEDIAMTX_CONFIG not found – using default config"
     fi
 
-    # Optional systemd service
-    echo "Creating systemd service (requires sudo)..."
-    sudo tee /etc/systemd/system/${MEDIAMTX_SERVICE_NAME}.service >/dev/null <<EOF
+    if command -v systemctl &>/dev/null; then
+        echo "Creating systemd service for user '$REAL_USER'..."
+        sudo tee /etc/systemd/system/${MEDIAMTX_SERVICE_NAME}.service >/dev/null <<EOF
 [Unit]
 Description=MediaMTX streaming server
 After=network.target
 
 [Service]
-ExecStart=$MEDIAMTX_INSTALL_DIR/mediamtx /etc/mediamtx.yml
+ExecStart=$MEDIAMTX_INSTALL_DIR/mediamtx $MEDIAMTX_CONFIG_DEST
 Restart=on-failure
-User=pi
+User=$REAL_USER
 
 [Install]
 WantedBy=multi-user.target
 EOF
-
-    sudo systemctl daemon-reload
-    sudo systemctl enable "$MEDIAMTX_SERVICE_NAME"
-    echo "MediaMTX service enabled. Start with: sudo systemctl start $MEDIAMTX_SERVICE_NAME"
-    echo "Or use './pcjr.sh server-start'"
+        sudo systemctl daemon-reload
+        sudo systemctl enable "$MEDIAMTX_SERVICE_NAME"
+        echo "Service enabled. Start with: sudo systemctl start $MEDIAMTX_SERVICE_NAME"
+        echo "Or use './pcjr.sh server-start'"
+    else
+        echo "No systemd detected; start manually with './pcjr.sh server-start'"
+    fi
 
     rm -rf "$tmpdir"
 }
 
 server-start() {
-    # Starts the server using systemd if available, else runs directly
-    if systemctl is-active --quiet "$MEDIAMTX_SERVICE_NAME"; then
-        echo "MediaMTX is already running."
-    elif systemctl list-unit-files | grep -q "^${MEDIAMTX_SERVICE_NAME}.service"; then
-        sudo systemctl start "$MEDIAMTX_SERVICE_NAME"
-        echo "Started MediaMTX service."
+    if command -v systemctl &>/dev/null && systemctl is-enabled "$MEDIAMTX_SERVICE_NAME" &>/dev/null; then
+        if systemctl is-active --quiet "$MEDIAMTX_SERVICE_NAME"; then
+            echo "MediaMTX is already running."
+        else
+            sudo systemctl start "$MEDIAMTX_SERVICE_NAME"
+            echo "Started MediaMTX service."
+        fi
     else
         echo "Starting MediaMTX directly (Ctrl+C to stop)..."
-        $MEDIAMTX_INSTALL_DIR/mediamtx "$MEDIAMTX_CONFIG"
+        "$MEDIAMTX_INSTALL_DIR/mediamtx" "$MEDIAMTX_CONFIG_DEST"
     fi
 }
 
