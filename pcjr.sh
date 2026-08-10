@@ -178,9 +178,6 @@ EOF
     sudo systemctl enable "$MEDIAMTX_SERVICE_NAME"
     echo "MediaMTX service enabled. Start with: sudo systemctl start $MEDIAMTX_SERVICE_NAME"
     echo "Or use './pcjr.sh server-start'"
->>>>>>> 6f69ea4 (Buggy unified install file)
-=======
->>>>>>> 4f512c4 (Buggy unified install file?????/)
 
     rm -rf "$tmpdir"
 }
@@ -193,7 +190,6 @@ server-start() {
             sudo systemctl start "$MEDIAMTX_SERVICE_NAME"
             echo "Started MediaMTX service."
         fi
-
     else
         echo "Starting MediaMTX directly (Ctrl+C to stop)..."
         "$MEDIAMTX_INSTALL_DIR/mediamtx" "$MEDIAMTX_CONFIG_DEST"
