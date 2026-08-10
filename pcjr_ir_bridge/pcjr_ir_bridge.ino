@@ -43,7 +43,8 @@ const int irPin = 5;            // PE3 on ATmega2560
 
 void setup() {
   Serial.begin(600);
-	//setup_PowerPCJr();
+	setup_PowerPCJr();
+
   pinMode(irPin, OUTPUT);
   // Idle state: HIGH = IR LED off (active‑low circuit)
   PORTE |= (1 << 3);             // force pin high
@@ -114,7 +115,9 @@ void sendByte(uint8_t data) {
 }
 
 void loop() {
+	digitalWrite(irPin, LOW);
   while (Serial.available()) {
     sendByte(Serial.read());
   }
+	digitalWrite(irPin, LOW);
 }

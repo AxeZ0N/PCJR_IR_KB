@@ -22,9 +22,9 @@ unsigned long OFF_CODES[5] = {
 #define PULSELENGTH 149
 #define REPEATS 15
 
-void setup_tx(int tx_pin = 10, int tx_protocol = 1,
-              int tx_pulselength = 149,
-              int tx_repeats = 15) {
+void setup_tx(int tx_pin = PIN, int tx_protocol = PROTO,
+              int tx_pulselength = PULSELENGTH,
+              int tx_repeats = REPEATS) {
   myTX.enableTransmit(PIN); // Transmitter is connected to Arduino Pin #10
   myTX.setProtocol(tx_protocol); // Optional set protocol (default is 1, \)
   myTX.setPulseLength(tx_pulselength); // Optional set pulse length.
@@ -44,10 +44,10 @@ void parseInput(int ID, int STATE) {
   }
 
   unsigned long data;
-  if (STATE) {
+  if (STATE == 1) {
     data = ON_CODES[ID - 1];
   }
-  else {
+  else if (STATE == 0) {
     data = OFF_CODES[ID - 1];
   }
 
@@ -59,18 +59,30 @@ void parseInput(int ID, int STATE) {
 
 }
 void setup_PowerPCJr() {
-    
   setup_tx();
-  // setup_rx();
-  
-  //Serial.println("Mode 0: PowerPCJr\nMode 1: IR Bridge");
-  
-  while (not Serial.available()) { };
-  if (Serial.parseInt() == 0) { 
-    //Serial.println("Enter desired state 0/1:");
-    while (not Serial.available()) { };
-    parseInput(5, Serial.parseInt());
-  }
 
-  // setup_rx();
+	// Flush buffer and wait for magic byte
+	while (Serial.available()) {Serial.read();}
+	while (Serial.parseInt() != 1) {
+		Serial.println("Press 1 to cont.");
+	};
+
+	// Mode 0 is PowerPCJr, Mode 1 is ir_bridge
+	Serial.println("Choose mode: 0 = Outlet On/Off. 1 = PCJr IR Bridge");
+	while (not Serial.available()) { };
+	int mode = Serial.parseInt();
+	Serial.print("Mode chosen: ");
+	Serial.println(mode);
+
+	if (mode == 0) {
+		// In mode 0, the next int sets the state of the outlet 1/0
+		// Then go in to normal mode
+		Serial.println("Choose outlet state: 0 = Off, 1 = On");
+		while (not Serial.available()) { };
+		int state = Serial.parseInt();
+		Serial.print("State chosen: ");
+		Serial.println(state);
+		parseInput(2, state);
+	}
+	// In mode 1, we just fall through to normal execution
 }

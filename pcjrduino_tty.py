@@ -114,26 +114,31 @@ def restore_mode(fd, old):
     termios.tcsetattr(fd, termios.TCSADRAIN, old)
 
 
-def connect_serial():
+def connect_serial(mode='1'):
     """Open the serial port with a short connection animation."""
-    ser = serial.Serial(SERIAL, BAUD, timeout=0)
+    ser = serial.Serial(SERIAL, BAUD, timeout=0, dsrdtr=False)
+    ser.dtr = False
+    time.sleep(0.1)
+    ser.dtr = True
     print("Connecting", flush=True, end='')
     for _ in range(3):
         print(".", end='', flush=True)
         time.sleep(1)
+
+    send_char(ser, '1')
+    send_char(ser, mode)
+    print(f"\nArduino mode: {mode}")
     print("Ready!", flush=True)
-    return  ser
+    return ser
 
 # ----------------------------------------------------------------------
 # Main interactive loop
 # ----------------------------------------------------------------------
-def main():
+def main(ser):
     fd = sys.stdin.fileno()
     old = set_raw_mode(fd)
 
     try:
-        ser = connect_serial()
-        send_char(ser, '1')
         esc_buf = b''
         last_esc = 0.0
         hex_mode = False
@@ -213,7 +218,7 @@ def main():
 # ----------------------------------------------------------------------
 # File‑to‑keyboard mode
 # ----------------------------------------------------------------------
-def write_program(fname):
+def write_program(ser, fname):
     """Read a file and ‘type’ its contents through the PCjr keyboard."""
     with open(fname, 'r') as f:
         data = f.read()          # whole file as a single string
@@ -222,8 +227,6 @@ def write_program(fname):
     old = set_raw_mode(fd)
 
     try:
-        ser = connect_serial()
-        send_char(ser, '1')
         for ch in data:
             send_char(ser, ch)
             print(f"\rGOT: {ord(ch):02X} {repr(ch)}", flush=True, end='')
@@ -235,24 +238,26 @@ def write_program(fname):
 
 # ----------------------------------------------------------------------
 if __name__ == '__main__':
+    # Args mean pre-processing
     if len(sys.argv) > 1:
-        match sys.argv[1]:
-            case "ON":
-                ser = connect_serial()
-                send_char(ser, "0")
-                send_char(ser, "1")
-                print("Turning on!")
-                exit()
 
-            case "OFF":
-                ser = connect_serial()
-                send_char(ser, "0")
-                send_char(ser, "0")
-                print("Turning off!")
-                exit()
-
-            case _:
-                write_program(sys.argv[1])
-                exit()
+        # mode 0 == alt, mode 1 == normal
+        # state 0 == off, state 1 == on
+        mode = '0' if sys.argv[1] in ["ON","OFF"] else '1'
+        state = '0' if sys.argv[1] == "OFF" else '1'
     else:
-        main()
+        mode = '1'
+
+    ser = connect_serial(mode)
+
+    # Either send state or write program
+    if mode == '0': 
+        print(f"PCJr state: {state}")
+        send_char(ser, state)
+    elif len(sys.argv) > 1: 
+        print(f"Writing {sys.argv[1]}")
+        write_program(ser, sys.argv[1])
+
+    # Either way, fall through to normal mod
+    print("Enter bridge mode")
+    main(ser)

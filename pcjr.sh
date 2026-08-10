@@ -106,6 +106,7 @@ upload() {
     echo "Uploading..."
     avrdude -v -p atmega2560 -c wiring -P "$SERIAL_DEVICE" -b 115200 -D \
         -U "flash:w:${BUILD_DIR}/pcjr_ir_bridge.ino.hex"
+		sudo stty -F /dev/ttyACM0 hupcl
 }
 
 compile_and_upload() {
