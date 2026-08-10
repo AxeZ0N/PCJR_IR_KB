@@ -133,6 +133,7 @@ def main():
 
     try:
         ser = connect_serial()
+        send_char(ser, '1')
         esc_buf = b''
         last_esc = 0.0
         hex_mode = False
@@ -222,6 +223,7 @@ def write_program(fname):
 
     try:
         ser = connect_serial()
+        send_char(ser, '1')
         for ch in data:
             send_char(ser, ch)
             print(f"\rGOT: {ord(ch):02X} {repr(ch)}", flush=True, end='')
@@ -234,6 +236,23 @@ def write_program(fname):
 # ----------------------------------------------------------------------
 if __name__ == '__main__':
     if len(sys.argv) > 1:
-        write_program(sys.argv[1])
+        match sys.argv[1]:
+            case "ON":
+                ser = connect_serial()
+                send_char(ser, "0")
+                send_char(ser, "1")
+                print("Turning on!")
+                return
+
+            case "OFF":
+                ser = connect_serial()
+                send_char(ser, "0")
+                send_char(ser, "0")
+                print("Turning off!")
+                return
+
+            case _:
+                write_program(sys.argv[1])
+                return
     else:
         main()
