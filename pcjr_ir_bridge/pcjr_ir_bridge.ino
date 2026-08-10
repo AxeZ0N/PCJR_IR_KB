@@ -25,6 +25,7 @@
 
 #define __DELAY_ROUND_CLOSEST__   // required for floating‑point _delay_us()
 #include <util/delay.h>
+#include "PowerPCJr.h"
 
 // --- Pin definitions ---
 const int irPin = 5;            // PE3 on ATmega2560
@@ -42,6 +43,7 @@ const int irPin = 5;            // PE3 on ATmega2560
 
 void setup() {
   Serial.begin(600);
+	setup_PCJr();
   pinMode(irPin, OUTPUT);
   // Idle state: HIGH = IR LED off (active‑low circuit)
   PORTE |= (1 << 3);             // force pin high
