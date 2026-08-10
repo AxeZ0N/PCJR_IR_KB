@@ -242,17 +242,17 @@ if __name__ == '__main__':
                 send_char(ser, "0")
                 send_char(ser, "1")
                 print("Turning on!")
-                return
+                exit()
 
             case "OFF":
                 ser = connect_serial()
                 send_char(ser, "0")
                 send_char(ser, "0")
                 print("Turning off!")
-                return
+                exit()
 
             case _:
                 write_program(sys.argv[1])
-                return
+                exit()
     else:
         main()

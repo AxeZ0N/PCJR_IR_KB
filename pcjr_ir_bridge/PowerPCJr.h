@@ -39,7 +39,7 @@ void setup_rx(RCSwitch rx_switch, int rx_interrupt = 0) {
 
 void parseInput(int ID, int STATE) {
   if (ID < 0 or ID > sizeof(ON_CODES)) {
-    Serial.println("Not in array");
+    //Serial.println("Not in array");
     return;
   }
 
@@ -53,7 +53,7 @@ void parseInput(int ID, int STATE) {
 
   for (unsigned long i = 0; i < 1; i++) {
     myTX.send(data, 24);
-    Serial.print(ID); Serial.print(" "); Serial.println(data, HEX);
+    //Serial.print(ID); Serial.print(" "); Serial.println(data, HEX);
   }
 
 
@@ -63,25 +63,14 @@ void setup_PowerPCJr() {
   setup_tx();
   // setup_rx();
   
-  Serial.println("Mode 0: PowerPCJr\nMode 1: IR Bridge");
+  //Serial.println("Mode 0: PowerPCJr\nMode 1: IR Bridge");
   
   while (not Serial.available()) { };
   if (Serial.parseInt() == 0) { 
-    Serial.println("Enter desired state 0/1:");
+    //Serial.println("Enter desired state 0/1:");
     while (not Serial.available()) { };
     parseInput(5, Serial.parseInt());
   }
 
   // setup_rx();
-}
-
-
-void loop() {
-
-  Serial.println("Enter data: <outlet #> <state>");
-  while (not Serial.available()) { };
-  int ID = Serial.parseInt();
-  int STATE = Serial.parseInt();
-  parseInput(ID, STATE);
-
 }
