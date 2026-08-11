@@ -116,9 +116,9 @@ def restore_mode(fd, old):
 
 def connect_serial(mode='1'):
     """Open the serial port with a short connection animation."""
-    ser = serial.Serial(SERIAL, BAUD, timeout=0, dsrdtr=False)
+    ser = serial.Serial(SERIAL, BAUD, timeout=0)
     ser.dtr = False
-    time.sleep(0.1)
+    time.sleep(0.2)
     ser.dtr = True
     print("Connecting", flush=True, end='')
     for _ in range(3):
@@ -126,6 +126,7 @@ def connect_serial(mode='1'):
         time.sleep(1)
 
     send_char(ser, '1')
+    time.sleep(1)
     send_char(ser, mode)
     print(f"\nArduino mode: {mode}")
     print("Ready!", flush=True)

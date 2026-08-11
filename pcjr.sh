@@ -106,8 +106,20 @@ upload() {
     echo "Uploading..."
     avrdude -v -p atmega2560 -c wiring -P "$SERIAL_DEVICE" -b 115200 -D \
         -U "flash:w:${BUILD_DIR}/pcjr_ir_bridge.ino.hex"
-		sudo stty -F /dev/ttyACM0 hupcl
+		hupcl
 }
+
+hupcl() {
+		echo "$SERIAL_DEVICE hupcl now: ON"
+		sudo stty -F $SERIAL_DEVICE hupcl
+}
+
+debug() {
+    echo "Opening debug terminal"
+		hupcl
+		screen $SERIAL_DEVICE $SERIAL_BAUD
+}
+
 
 compile_and_upload() {
     compile
@@ -245,6 +257,8 @@ case "$1" in
     server-setup)   server-setup ;;
     server-start)   server-start ;;
     driver)         shift; driver "$@" ;;
+		hupcl)					hupcl;;
+		debug)					debug;;
     help|--help|-h) help_msg ;;
     *)              echo "Unknown command: $1" >&2; help_msg; exit 1 ;;
 esac
