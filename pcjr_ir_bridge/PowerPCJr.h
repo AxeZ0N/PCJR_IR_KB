@@ -59,10 +59,12 @@ void parseInput(int ID, int STATE) {
 
 }
 void setup_PowerPCJr() {
+	return
   setup_tx();
 
 	// Flush buffer and wait for magic byte
 	while (Serial.available()) {Serial.read();}
+	parseInput(2, 0);
 	while (Serial.parseInt() != 1) {
 		Serial.println("Press 1 to cont.");
 	};

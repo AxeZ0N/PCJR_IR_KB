@@ -99,6 +99,7 @@ compile() {
     check_deps arduino-cli
     echo "Compiling..."
     arduino-cli compile --fqbn "$FQBN" pcjr_ir_bridge/ --build-path "$BUILD_DIR"
+		hupcl
 }
 
 upload() {
@@ -106,7 +107,6 @@ upload() {
     echo "Uploading..."
     avrdude -v -p atmega2560 -c wiring -P "$SERIAL_DEVICE" -b 115200 -D \
         -U "flash:w:${BUILD_DIR}/pcjr_ir_bridge.ino.hex"
-		hupcl
 }
 
 hupcl() {
@@ -116,6 +116,8 @@ hupcl() {
 
 debug() {
     echo "Opening debug terminal"
+		echo "Exit with <C-A> + K, Y"
+		sleep 2
 		hupcl
 		screen $SERIAL_DEVICE $SERIAL_BAUD
 }
@@ -256,9 +258,9 @@ case "$1" in
     stream)         stream ;;
     server-setup)   server-setup ;;
     server-start)   server-start ;;
-    driver)         shift; driver "$@" ;;
 		hupcl)					hupcl;;
 		debug)					debug;;
+    driver)         shift; driver "$@" ;;
     help|--help|-h) help_msg ;;
     *)              echo "Unknown command: $1" >&2; help_msg; exit 1 ;;
 esac

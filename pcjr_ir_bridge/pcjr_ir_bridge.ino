@@ -41,9 +41,10 @@ const int irPin = 5;            // PE3 on ATmega2560
 // --- 40 kHz carrier generation with Timer 3 ---
 #define TIMER3_TOP  24   // 16 MHz / (2 * 40 kHz) / 8 - 1 = 24
 
+void hloop();
+
 void setup() {
   Serial.begin(600);
-	setup_PowerPCJr();
 
   pinMode(irPin, OUTPUT);
   // Idle state: HIGH = IR LED off (active‑low circuit)
@@ -55,6 +56,9 @@ void setup() {
   TCNT3  = 0;
   OCR3A  = TIMER3_TOP;
   TCCR3B = (1 << WGM32);        // CTC mode, clock stopped
+
+	//hloop();
+	setup_PowerPCJr();
 }
 
 // --- Inline functions for carrier control ---
@@ -114,10 +118,17 @@ void sendByte(uint8_t data) {
   _delay_us(INTER_BYTE_GAP);
 }
 
+void hloop() {
+	while (true) { 
+		digitalWrite(irPin, LOW);
+		for (int i=0; i<20; i++){ sendByte(0x23); }
+		digitalWrite(irPin, LOW);
+		delay(2000);
+	}
+}
+
 void loop() {
 	digitalWrite(irPin, LOW);
-  while (Serial.available()) {
-    sendByte(Serial.read());
-  }
+  while (Serial.available()) { sendByte(Serial.read()); }
 	digitalWrite(irPin, LOW);
 }
