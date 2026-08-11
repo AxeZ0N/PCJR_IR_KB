@@ -6,7 +6,7 @@ Usage:
   pcjr_control.py keyboard          # interactive keyboard mode
   pcjr_control.py on  <id>          # turn outlet ON  (id = 1..5)
   pcjr_control.py off <id>          # turn outlet OFF (id = 1..5)
-  pcjr_control.py write <file>      # type a text file through the PCjr
+  pcjr_control.py write <file>      # type a text file through the PCjr (drops into keyboard mode after)
 
 All modes use a DTR‑pulse reset to select the correct Arduino mode.
 """
@@ -119,6 +119,7 @@ class ArduinoLink:
         mode_byte must be b'0' (RF) or b'1' (IR).
         Returns the open serial object.
         """
+        print("Connecting...",end="",flush=True)
         # 1. Open port with DTR held high to avoid spurious reset
         self.ser = serial.Serial(self.port, self.baud, timeout=3)
         self.ser.dtr = True
@@ -141,6 +142,7 @@ class ArduinoLink:
         expected = 'MODE:RF' if mode_byte == b'0' else 'MODE:IR'
         self._read_until(expected, timeout=3)
 
+        print("\rConnected!    ")
         return self.ser
 
     def _read_until(self, target, timeout):
@@ -232,6 +234,7 @@ def run_keyboard_loop(ser):
 # ----------------------------------------------------------------------
 def cmd_on(link, outlet_id):
     ser = link.connect(b'0')
+    print("Toggle PCJr [ON]")
     ser.write(f"{outlet_id} 1\n".encode())
     ser.flush()
     time.sleep(0.5)   # let Arduino transmit + reset
@@ -239,6 +242,7 @@ def cmd_on(link, outlet_id):
 
 def cmd_off(link, outlet_id):
     ser = link.connect(b'0')
+    print("Toggle PCJr [OFF]")
     ser.write(f"{outlet_id} 0\n".encode())
     ser.flush()
     time.sleep(0.5)
@@ -251,6 +255,7 @@ def cmd_write(link, filename):
     with open(filename, 'r') as f:
         data = f.read()
     ser = link.connect(b'1')
+    print(f"Typing file: {sys.argv[2]}")
     for ch in data:
         send_char(ser, ch)
     link.close()
@@ -268,6 +273,7 @@ def main():
 
     if cmd == 'keyboard':
         ser = link.connect(b'1')
+        print("Begin typing:")
         run_keyboard_loop(ser)
         link.close()
     elif cmd == 'on':
@@ -285,6 +291,8 @@ def main():
             print("Usage: pcjr_control.py write <file>")
             sys.exit(1)
         cmd_write(link, sys.argv[2])
+        run_keyboard_loop(ser)
+        link.close()
     else:
         print(f"Unknown command: {cmd}")
         print(__doc__)
