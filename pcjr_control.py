@@ -291,7 +291,6 @@ def main():
             print("Usage: pcjr_control.py write <file>")
             sys.exit(1)
         cmd_write(link, sys.argv[2])
-        run_keyboard_loop(ser)
         link.close()
     else:
         print(f"Unknown command: {cmd}")
