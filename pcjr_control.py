@@ -184,7 +184,7 @@ def run_keyboard_loop(ser):
             if not raw:
                 break
             ch = raw.decode('latin-1')
-            print(f"\rGOT: {ord(ch):02X} {repr(ch)}", flush=True, end='')
+            print(f"\rGOT: {ord(ch):02X} {repr(ch)}          ", flush=True, end='')
 
             if ch == '\x03':    # Ctrl+C
                 break
