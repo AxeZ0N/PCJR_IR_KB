@@ -139,6 +139,11 @@ stream() {
         "$rtsp_url"
 }
 
+connect() {
+	# pcjrduino IP
+	ssh -t 192.168.4.34 "/home/k/PCJR_IR_KB/pcjr.sh driver" "$@"
+}
+
 # ----------------------------------------------------------------------
 # MediaMTX server setup and control
 # ----------------------------------------------------------------------
@@ -235,6 +240,7 @@ Commands:
   server-setup        Install MediaMTX and configure the camera server
   server-start        Start the MediaMTX server (systemd or foreground)
   driver [args...]    Run the Python interactive keyboard driver
+	connect							SSH into pcjrduino in driver mode
   help                Show this message
 
 All parameters are configurable in pcjr.conf.
@@ -261,6 +267,7 @@ case "$1" in
 		hupcl)					hupcl;;
 		debug)					debug;;
     driver)         shift; driver "$@" ;;
+    connect)        shift; connect "$@" ;;
     help|--help|-h) help_msg ;;
     *)              echo "Unknown command: $1" >&2; help_msg; exit 1 ;;
 esac
