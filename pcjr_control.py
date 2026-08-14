@@ -86,6 +86,10 @@ def send_code(ser, scan, mod=0):
     ser.flush()
     time.sleep(0.002)
 
+def reset(ser):
+    for ch in "new : clear : cls\n":
+        send_char(ser, ch)
+
 def send_ctrl_alt_del(ser):
     ser.write(bytes([0x1D, 0x38]))             # Ctrl down, Alt down
     ser.write(bytes([0x53, 0x53 | 0x80]))      # Del press + release
@@ -192,6 +196,11 @@ def run_keyboard_loop(ser):
             if hex_mode:
                 if ch == '!':
                     send_ctrl_alt_del(ser)
+                    hex_mode = False
+                    hex_buf = ''
+                    continue
+                if ch == 'r':
+                    reset(ser)
                     hex_mode = False
                     hex_buf = ''
                     continue
