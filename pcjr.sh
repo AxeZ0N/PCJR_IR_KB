@@ -136,6 +136,7 @@ stream() {
         --profile=low-latency \
         --cache=yes \
         --demuxer-lavf-o=rtsp_transport=tcp \
+				--no-cache \
         "$rtsp_url"
 }
 

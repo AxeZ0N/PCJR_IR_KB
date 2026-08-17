@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-pcjr_control.py – Unified PCjr keyboard & 433 MHz outlet controller.
+pcjr_control.py – Unified PCjr keyboard & 433 MHz outlet controller.
 
 Usage:
   pcjr_control.py keyboard          # interactive keyboard mode
   pcjr_control.py on  <id>          # turn outlet ON  (id = 1..5)
   pcjr_control.py off <id>          # turn outlet OFF (id = 1..5)
-  pcjr_control.py write <file>      # type a text file through the PCjr (drops into keyboard mode after)
+  pcjr_control.py write <file>      # type a text file through the PCjr
 
-All modes use a DTR‑pulse reset to select the correct Arduino mode.
+All modes use a DTR-pulse reset to select the correct Arduino mode.
 """
 
 import sys
@@ -21,8 +21,12 @@ import select
 SERIAL_PORT = '/dev/ttyACM0'
 BAUD = 600
 
+# Arduino IR frame timing. Keep in sync with the sketch IBG setting.
+IBG_US = 4840.0
+FRAME_TIME_US = 4332.5 + IBG_US
+
 # ----------------------------------------------------------------------
-# PCjr scan code tables (verbatim from your original driver)
+# PCjr scan code tables
 # ----------------------------------------------------------------------
 SCAN = {
     'a': 0x1E, 'b': 0x30, 'c': 0x2E, 'd': 0x20, 'e': 0x12, 'f': 0x21,
@@ -74,26 +78,50 @@ def restore_mode(fd, old):
     termios.tcsetattr(fd, termios.TCSADRAIN, old)
 
 # ----------------------------------------------------------------------
-# Low‑level serial send helpers
+# Low-level serial send helpers
 # ----------------------------------------------------------------------
 def send_code(ser, scan, mod=0):
-    """Send a make/break scan code pair, optionally with a modifier."""
+    """Send a make/break scan code pair, optionally with a modifier.
+
+    A normal key produces 2 frames (make + break).
+    A shifted or modified key produces 4 frames:
+        [mod make] [key make] [key break] [mod break]
+
+    After flushing, the routine paces by FRAME COUNT so that shifted
+    characters receive proportionally more time than unshifted ones.
+    At low baud (e.g. 600), the serial write itself already provides
+    more than enough spacing, so this adds zero delay.
+    """
+    frames = []
+
     if mod:
-        ser.write(bytes([mod]))
-    ser.write(bytes([scan, scan | 0x80]))
+        frames.append(mod)
+
+    frames.append(scan)
+    frames.append(scan | 0x80)
+
     if mod:
-        ser.write(bytes([mod | 0x80]))
+        frames.append(mod | 0x80)
+
+    ser.write(bytes(frames))
     ser.flush()
-    time.sleep(0.002)
+
+    serial_time = len(frames) * (12.0 / BAUD)
+    ir_time = len(frames) * (FRAME_TIME_US / 1_000_000.0)
+    delay = ir_time - serial_time
+
+    if delay > 0:
+        time.sleep(delay)
 
 def reset(ser):
-    for ch in "new : clear : cls\n":
+    for ch in "new\nclear\ncls\n":
         send_char(ser, ch)
 
 def send_ctrl_alt_del(ser):
     ser.write(bytes([0x1D, 0x38]))             # Ctrl down, Alt down
     ser.write(bytes([0x53, 0x53 | 0x80]))      # Del press + release
     ser.write(bytes([0x38 | 0x80, 0x1D | 0x80])) # Alt up, Ctrl up
+    ser.flush()
 
 def send_char(ser, ch):
     b = ord(ch)
@@ -109,7 +137,7 @@ def send_char(ser, ch):
             send_code(ser, SCAN[letter], 0x1D)   # Ctrl
 
 # ----------------------------------------------------------------------
-# ArduinoLink – persistent serial + DTR‑reset handshake
+# ArduinoLink – persistent serial + DTR-reset handshake
 # ----------------------------------------------------------------------
 class ArduinoLink:
     def __init__(self, port=SERIAL_PORT, baud=BAUD):
@@ -119,7 +147,7 @@ class ArduinoLink:
 
     def connect(self, mode_byte):
         """
-        Reset the Arduino and wait for the mode‑selection handshake.
+        Reset the Arduino and wait for the mode-selection handshake.
         mode_byte must be b'0' (RF) or b'1' (IR).
         Returns the open serial object.
         """
@@ -163,7 +191,7 @@ class ArduinoLink:
             self.ser.close()
 
 # ----------------------------------------------------------------------
-# Interactive keyboard loop (your original main() extracted)
+# Interactive keyboard loop
 # ----------------------------------------------------------------------
 def run_keyboard_loop(ser):
     fd = sys.stdin.fileno()
@@ -199,7 +227,7 @@ def run_keyboard_loop(ser):
                     hex_mode = False
                     hex_buf = ''
                     continue
-                if ch == 'r':
+                if ch == '@':
                     reset(ser)
                     hex_mode = False
                     hex_buf = ''
@@ -258,7 +286,7 @@ def cmd_off(link, outlet_id):
     link.close()
 
 # ----------------------------------------------------------------------
-# File‑typing command
+# File-typing command
 # ----------------------------------------------------------------------
 def cmd_write(link, filename):
     with open(filename, 'r') as f:
@@ -300,7 +328,6 @@ def main():
             print("Usage: pcjr_control.py write <file>")
             sys.exit(1)
         cmd_write(link, sys.argv[2])
-        link.close()
     else:
         print(f"Unknown command: {cmd}")
         print(__doc__)
