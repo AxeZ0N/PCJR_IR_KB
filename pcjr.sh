@@ -138,8 +138,8 @@ stream() {
         --demuxer-lavf-o=rtsp_transport=tcp \
 				--vd-lavc-threads=1 \
 				--framedrop=vo \
-				--speed=1.01
-        "$rtsp_url"
+				--speed=1.01 \
+        "$rtsp_url" 
 }
 
 connect() {
