@@ -142,6 +142,20 @@ stream() {
         "$rtsp_url" 
 }
 
+
+reboot() {
+	echo "Shutdown!"
+	./pcjr.sh driver off 2
+	echo "Sleep..."
+	sleep 30
+	echo "Startup!"
+	./pcjr.sh driver on 2
+	./pcjr.sh driver on 2
+	./pcjr.sh driver on 2
+	./pcjr.sh driver on 2
+	./pcjr.sh driver on 2
+}
+
 connect() {
 	# pcjrduino IP
 	ssh -t 192.168.4.34 "/home/k/PCJR_IR_KB/pcjr.sh driver" "$@"
@@ -271,6 +285,7 @@ case "$1" in
 		debug)					debug;;
     driver)         shift; driver "$@" ;;
     connect)        shift; connect "$@" ;;
+		reboot)					reboot ;;
     help|--help|-h) help_msg ;;
     *)              echo "Unknown command: $1" >&2; help_msg; exit 1 ;;
 esac
