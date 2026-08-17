@@ -134,9 +134,11 @@ stream() {
     echo "Viewing RTSP stream at $rtsp_url"
     mpv \
         --profile=low-latency \
-        --cache=yes \
-        --demuxer-lavf-o=rtsp_transport=tcp \
 				--no-cache \
+        --demuxer-lavf-o=rtsp_transport=tcp \
+				--vd-lavc-threads=1 \
+				--framedrop=vo \
+				--speed=1.01
         "$rtsp_url"
 }
 

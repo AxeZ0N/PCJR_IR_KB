@@ -106,11 +106,15 @@ def send_code(ser, scan, mod=0):
     ser.write(bytes(frames))
     ser.flush()
 
-    serial_time = len(frames) * (12.0 / BAUD)
+    serial_time = len(frames) * (20.0 / BAUD)
     ir_time = len(frames) * (FRAME_TIME_US / 1_000_000.0)
     delay = ir_time - serial_time
 
+    if scan == 0x1c:
+        delay = 1
+
     if delay > 0:
+        print(f"\rDelay: {delay}",end="")
         time.sleep(delay)
 
 def reset(ser):
